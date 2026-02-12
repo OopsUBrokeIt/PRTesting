@@ -26,11 +26,16 @@ class CreateInvoiceIn(BaseModel):
     line_items: List[LineItemIn]
     auto_pay: bool = False
     payment_method_id: Optional[str] = None
+    currency: Optional[str] = "USD"
+
+class CancelInvoiceIn(BaseModel):
+    reason: Optional[str] = None
 
 @app.post("/v1/invoices")
 def create_invoice(payload: CreateInvoiceIn):
     invoice_id = f"inv_{len(INVOICES)+1}"
     now = datetime.utcnow()
+    currency = payload.currency or "USD"
     invoice = Invoice(
         id=invoice_id,
         customer_id=payload.customer_id,
@@ -41,12 +46,13 @@ def create_invoice(payload: CreateInvoiceIn):
         line_items=[LineItem(**li.dict()) for li in payload.line_items],
         auto_pay=payload.auto_pay,
         payment_method_id=payload.payment_method_id,
+        currency=currency,
     )
 
     if invoice.auto_pay:
         intent = stripey.create_payment_intent(
             amount_cents=invoice.total_cents,
-            currency="USD",
+            currency=currency,
             customer_id=invoice.customer_id,
             payment_method_id=invoice.payment_method_id,
             confirm=True,
@@ -75,6 +81,19 @@ def send_invoice(invoice_id: str):
     if invoice.status == "draft":
         invoice.status = "sent"
     return {"ok": True}
+
+@app.post("/v1/invoices/{invoice_id}/cancel")
+def cancel_invoice(invoice_id: str, payload: CancelInvoiceIn):
+    invoice = INVOICES.get(invoice_id)
+    if not invoice:
+        raise HTTPException(404, "not_found")
+    if invoice.status == "canceled":
+        return {"ok": True}
+    invoice.status = "canceled"
+    invoice.cancel_reason = payload.reason or "customer_request"
+    invoice.canceled_at = datetime.utcnow()
+    invoice.updated_at = datetime.utcnow()
+    return {"id": invoice_id, "status": invoice.status}
 
 @app.post("/v1/webhooks/stripey")
 def stripey_webhook(payload: dict):

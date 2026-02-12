@@ -21,6 +21,9 @@ class Invoice:
     payment_method_id: Optional[str] = None
     payment_intent_id: Optional[str] = None
     ledger_entry_id: Optional[str] = None
+    currency: str = "USD"
+    canceled_at: Optional[datetime] = None
+    cancel_reason: Optional[str] = None
 
     @property
     def total_cents(self) -> int:

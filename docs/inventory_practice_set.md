@@ -50,3 +50,25 @@ We currently create reservations but rely on manual operations to clean stale ho
 ## Testing Notes
 - Added initial tests for create + release paths.
 - No load tests or end-to-end worker tests in this PR.
+
+---
+
+# Follow-up PR Description: Add Idempotent Reservation Creates + Limited Reconcile Trigger
+
+## Problem
+Operations reported duplicate reservations during checkout retries and reconcile runs taking too long under peak load.
+
+## Proposed Change
+- Add optional `idempotency_key` to create reservation endpoint.
+- Add `source` and `release_reason` metadata to reservation model.
+- Add `limit` and `dry_run` parameters to reconcile trigger.
+- Add repository lookup by idempotency key.
+
+## Tradeoffs
+- Idempotency implemented in repository memory index for faster rollout.
+- Reconcile limit is caller-provided to support ad-hoc operations.
+- Dry-run path reuses same endpoint shape as production trigger.
+
+## Testing Notes
+- Added test for idempotent create behavior.
+- Worker integration and concurrency tests are not included.

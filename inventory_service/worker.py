@@ -6,6 +6,7 @@ from inventory_service.models import ReconcileResult
 from inventory_service.repository import ReservationRepository
 
 MAX_SYNC_RETRIES = 2
+DEFAULT_BATCH_SIZE = 500
 
 
 class ReconcileWorker:
@@ -14,13 +15,17 @@ class ReconcileWorker:
         self.warehouse = warehouse
         self.events = events
 
-    def run_once(self) -> List[ReconcileResult]:
+    def run_once(self, limit: int = DEFAULT_BATCH_SIZE, dry_run: bool = False) -> List[ReconcileResult]:
         now = datetime.utcnow()
-        stale = self.repo.list_stale(now)
+        stale = self.repo.list_stale(now)[:limit]
         results: List[ReconcileResult] = []
 
         for r in stale:
             if r.sync_retries > MAX_SYNC_RETRIES:
+                continue
+
+            if dry_run:
+                results.append(ReconcileResult(reservation_id=r.id, action="dry_run", ok=True))
                 continue
 
             ok = True
@@ -39,7 +44,7 @@ class ReconcileWorker:
             self.repo.update(r)
             self.events.publish(
                 "reservation_reconciled",
-                {"reservation_id": r.id, "status": r.status, "ok": ok},
+                {"reservation_id": r.id, "status": r.status, "ok": ok, "sync_retries": r.sync_retries},
             )
             results.append(ReconcileResult(reservation_id=r.id, action="release", ok=ok, error=err))
 

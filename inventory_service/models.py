@@ -21,6 +21,9 @@ class Reservation:
     warehouse_hold_id: Optional[str] = None
     sync_retries: int = 0
     metadata: Dict[str, str] = {}
+    idempotency_key: Optional[str] = None
+    source: Optional[str] = "checkout"
+    release_reason: Optional[str] = None
 
 
 @dataclass

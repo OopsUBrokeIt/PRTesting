@@ -25,3 +25,15 @@ class ListingRegistrationResult(BaseModel):
 
 class ListingSyncResult(BaseModel):
     synced: bool
+
+
+class SyncWithRetryResult(BaseModel):
+    synced: bool
+    attempts: int
+
+
+class SyncAuditRecord(BaseModel):
+    listing_id: str
+    attempted_status: ListingStatus
+    success: bool
+    attempts: int

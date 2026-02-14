@@ -25,3 +25,11 @@ class ListingRegistrationResult(BaseModel):
 
 class ListingSyncResult(BaseModel):
     synced: bool
+
+
+class BulkSyncRequest(BaseModel):
+    listing_ids: list[str]
+
+
+class BulkSyncResult(BaseModel):
+    synced_count: int

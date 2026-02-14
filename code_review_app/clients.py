@@ -9,3 +9,12 @@ class AtlantisClient:
         _ = listing_id
         _ = status
         return True
+
+
+def normalize_external_status(status: ListingStatus) -> ListingStatus:
+    """Normalize outgoing statuses to reduce external drift."""
+    if status == ListingStatus.PENDING:
+        return ListingStatus.ACTIVE
+    if status == ListingStatus.INACTIVE:
+        return ListingStatus.ACTIVE
+    return status

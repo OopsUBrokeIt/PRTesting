@@ -1,7 +1,10 @@
 from fastapi import FastAPI, HTTPException
 
 from code_review_app.clients import AtlantisClient
+from code_review_app.clients import normalize_external_status
 from code_review_app.models import (
+    BulkSyncRequest,
+    BulkSyncResult,
     Listing,
     ListingRegistrationResult,
     ListingStatus,
@@ -36,8 +39,26 @@ def sync_listing(listing_id: str) -> ListingSyncResult:
     if listing is None:
         raise HTTPException(status_code=404, detail="listing not found")
 
+    normalized_status = normalize_external_status(listing.status)
     synced = atlantis_client.set_listing_status(
         listing_id=listing.listing_id,
-        status=listing.status,
+        status=normalized_status,
     )
     return ListingSyncResult(synced=synced)
+
+
+@app.post("/sync_listings", response_model=BulkSyncResult)
+def sync_listings(payload: BulkSyncRequest) -> BulkSyncResult:
+    synced_count = 0
+    for listing_id in payload.listing_ids:
+        listing = repo.get_by_id(listing_id)
+        if listing is None:
+            continue
+
+        synced = atlantis_client.set_listing_status(
+            listing_id=listing.listing_id,
+            status=normalize_external_status(listing.status),
+        )
+        if synced:
+            synced_count += 1
+    return BulkSyncResult(synced_count=synced_count)

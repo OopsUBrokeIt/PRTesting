@@ -4,7 +4,6 @@ from code_review_app.clients import AtlantisClient
 from code_review_app.models import (
     Listing,
     ListingRegistrationResult,
-    ListingStatus,
     ListingSyncResult,
     RegisterListingRequest,
 )
@@ -17,7 +16,11 @@ atlantis_client = AtlantisClient()
 
 @app.post("/register_listing", response_model=ListingRegistrationResult)
 def register_listing(payload: RegisterListingRequest) -> ListingRegistrationResult:
-    listing = Listing(listing_id=payload.listing_id, status=payload.status)
+    listing = Listing(
+        listing_id=payload.listing_id,
+        status=payload.status,
+        consistency=payload.consistency,
+    )
     repo.upsert(listing)
     return ListingRegistrationResult(listing_registered=True)
 
@@ -39,5 +42,6 @@ def sync_listing(listing_id: str) -> ListingSyncResult:
     synced = atlantis_client.set_listing_status(
         listing_id=listing.listing_id,
         status=listing.status,
+        consistency=listing.consistency,
     )
     return ListingSyncResult(synced=synced)

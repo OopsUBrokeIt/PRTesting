@@ -15,7 +15,11 @@ def test_register_then_get_status() -> None:
 
     get_status = client.get("/get_status/L-100")
     assert get_status.status_code == 200
-    assert get_status.json() == {"listing_id": "L-100", "status": "ACTIVE"}
+    assert get_status.json() == {
+        "listing_id": "L-100",
+        "status": "ACTIVE",
+        "consistency": "EVENTUAL",
+    }
 
 
 def test_sync_listing_happy_path() -> None:
@@ -32,3 +36,21 @@ def test_get_missing_listing_returns_404() -> None:
     response = client.get("/get_status/DOES_NOT_EXIST")
 
     assert response.status_code == 404
+
+
+def test_register_listing_supports_strong_consistency() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/register_listing",
+        json={"listing_id": "L-101", "status": "ACTIVE", "consistency": "STRONG"},
+    )
+    assert response.status_code == 200
+
+
+def test_register_listing_rejects_weak_consistency() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/register_listing",
+        json={"listing_id": "L-102", "status": "ACTIVE", "consistency": "WEAK"},
+    )
+    assert response.status_code == 422

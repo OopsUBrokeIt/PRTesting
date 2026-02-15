@@ -9,14 +9,21 @@ class ListingStatus(str, Enum):
     INACTIVE = "INACTIVE"
 
 
+class ConsistencyType(str, Enum):
+    EVENTUAL = "EVENTUAL"
+    STRONG = "STRONG"
+
+
 class RegisterListingRequest(BaseModel):
     listing_id: str
     status: ListingStatus
+    consistency: ConsistencyType = ConsistencyType.EVENTUAL
 
 
 class Listing(BaseModel):
     listing_id: str
     status: ListingStatus
+    consistency: ConsistencyType = ConsistencyType.EVENTUAL
 
 
 class ListingRegistrationResult(BaseModel):

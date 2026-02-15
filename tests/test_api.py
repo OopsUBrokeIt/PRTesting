@@ -32,3 +32,19 @@ def test_get_missing_listing_returns_404() -> None:
     response = client.get("/get_status/DOES_NOT_EXIST")
 
     assert response.status_code == 404
+
+
+def test_bulk_register_listings() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/register_listings",
+        json={
+            "listings": [
+                {"listing_id": "L-301", "status": "ACTIVE"},
+                {"listing_id": "L-302", "status": "PENDING"},
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"registered_count": 2}

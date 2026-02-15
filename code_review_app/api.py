@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 
 from code_review_app.clients import AtlantisClient
 from code_review_app.models import (
+    BulkRegisterListingsRequest,
+    BulkRegisterListingsResult,
     Listing,
     ListingRegistrationResult,
     ListingStatus,
@@ -20,6 +22,16 @@ def register_listing(payload: RegisterListingRequest) -> ListingRegistrationResu
     listing = Listing(listing_id=payload.listing_id, status=payload.status)
     repo.upsert(listing)
     return ListingRegistrationResult(listing_registered=True)
+
+
+@app.post("/register_listings", response_model=BulkRegisterListingsResult)
+def register_listings(payload: BulkRegisterListingsRequest) -> BulkRegisterListingsResult:
+    registered_count = 0
+    for item in payload.listings:
+        listing = Listing(listing_id=item.listing_id, status=item.status)
+        repo.upsert(listing)
+        registered_count += 1
+    return BulkRegisterListingsResult(registered_count=registered_count)
 
 
 @app.get("/get_status/{listing_id}", response_model=Listing)

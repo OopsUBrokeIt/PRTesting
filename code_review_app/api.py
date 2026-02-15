@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 
 from code_review_app.clients import AtlantisClient
 from code_review_app.models import (
+    BulkGetStatusesRequest,
+    BulkGetStatusesResult,
     Listing,
     ListingRegistrationResult,
     ListingStatus,
@@ -28,6 +30,17 @@ def get_status(listing_id: str) -> Listing:
     if listing is None:
         raise HTTPException(status_code=404, detail="listing not found")
     return listing
+
+
+@app.post("/get_statuses", response_model=BulkGetStatusesResult)
+def get_statuses(payload: BulkGetStatusesRequest) -> BulkGetStatusesResult:
+    listings: list[Listing] = []
+    for listing_id in payload.listing_ids:
+        listing = repo.get_by_id(listing_id)
+        if listing is None:
+            continue
+        listings.append(listing)
+    return BulkGetStatusesResult(listings=listings)
 
 
 @app.post("/sync_listing/{listing_id}", response_model=ListingSyncResult)

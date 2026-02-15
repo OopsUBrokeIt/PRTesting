@@ -32,3 +32,20 @@ def test_get_missing_listing_returns_404() -> None:
     response = client.get("/get_status/DOES_NOT_EXIST")
 
     assert response.status_code == 404
+
+
+def test_get_statuses_returns_found_listings_only() -> None:
+    client = TestClient(app)
+    client.post("/register_listing", json={"listing_id": "L-501", "status": "ACTIVE"})
+    client.post("/register_listing", json={"listing_id": "L-502", "status": "PENDING"})
+
+    response = client.post(
+        "/get_statuses",
+        json={"listing_ids": ["L-501", "MISSING", "L-502"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["listings"] == [
+        {"listing_id": "L-501", "status": "ACTIVE"},
+        {"listing_id": "L-502", "status": "PENDING"},
+    ]
